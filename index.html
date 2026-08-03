@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VOLADO, pregunta lo que sea, te contesta un qubit</title>
+<meta name="description" content="Hazle una pregunta de sí o no. La respuesta la decide un qubit medido en una computadora cuántica real de IBM. Azar 100% real, no pseudoaleatorio.">
+<meta name="theme-color" content="#161826">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="VOLADO">
+<meta property="og:title" content="VOLADO, échate un volado cuántico">
+<meta property="og:description" content="Pregunta lo que sea de sí o no. La respuesta la decide un qubit medido en hardware real de IBM. Azar de verdad, no Math.random().">
+<meta property="og:url" content="https://elvolado.app/">
+<meta property="og:image" content="https://elvolado.app/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:image" content="https://elvolado.app/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23161826'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%239184d9' stroke-width='2'/%3E%3Cellipse cx='16' cy='16' rx='9' ry='3.2' fill='none' stroke='%239184d9' stroke-width='1.4' opacity='.55'/%3E%3Ccircle cx='22' cy='11' r='2.6' fill='%239184d9'/%3E%3C/svg%3E">
+<script src="config.js"></script>
+<link rel="stylesheet" href="styles.css">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:flex;flex-direction:column}
+  a{color:var(--color-accent-300)}
+  a:hover{color:var(--color-accent-200)}
+
+
+  html[data-ads="off"] [data-slot]{display:none !important}
+  /* Reserva para la barra fija, solo cuando la barra existe. */
+  html[data-ads="on"] .shell{min-height:calc(100vh - 83px)}
+  html[data-ads="on"] .stage{padding-bottom:123px}
+  html[data-ads="on"] .panel{padding-bottom:111px}
+  html[data-ads="on"] .resultgrid{padding-bottom:117px}
+
+  /* --- estados: el body lleva data-state="home|measuring|result" --- */
+  [data-screen]{display:none}
+  body[data-state="home"]      [data-screen~="home"],
+  body[data-state="measuring"] [data-screen~="measuring"],
+  body[data-state="result"]    [data-screen~="result"]{display:block}
+  body[data-state="home"] .shell,
+  body[data-state="measuring"] .shell{display:grid}
+  .visually-hidden{position:absolute;width:1px;height:1px;margin:-1px;padding:0;
+    overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
+
+  .shell{flex:1;grid-template-columns:44% 1fr;min-height:100vh}
+  .stage{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;
+         gap:46px;padding:40px 24px;
+         background:radial-gradient(120% 90% at 30% 25%,var(--color-section-glow),var(--color-section) 62%)}
+  .panel{padding:24px 34px 28px;display:flex;flex-direction:column;min-width:0}
+  .brandbar{display:flex;align-items:center;gap:16px}
+  .brand{display:flex;align-items:center;gap:9px;margin-right:auto}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--color-accent);box-shadow:0 0 14px var(--color-accent)}
+  .wordmark{font-weight:600;font-size:14px;letter-spacing:.2em}
+  .navlink{font-size:13px;color:var(--color-neutral-400);text-decoration:none}
+  .navlink:hover{color:var(--color-text)}
+
+  /* --- esfera de Bloch --- */
+  .bloch{position:relative;width:min(280px,62vw);aspect-ratio:1}
+  .bloch .halo{position:absolute;inset:-30%;animation:qglow 3.6s ease-in-out infinite;
+    background:radial-gradient(circle,color-mix(in srgb,var(--color-accent) 30%,transparent),transparent 62%)}
+  .bloch .rig{position:absolute;inset:0;perspective:900px}
+  .bloch .orb{position:absolute;inset:0;transform-style:preserve-3d;animation:qspin 7s linear infinite}
+  .bloch .ring{position:absolute;inset:0;border-radius:50%;border:1px solid color-mix(in srgb,var(--color-section-ghost) 90%,transparent)}
+  .bloch .ring.eq{border-color:color-mix(in srgb,var(--color-accent-300) 70%,transparent)}
+  .bloch .ring.mer{transform:rotateX(78deg);border-color:color-mix(in srgb,var(--color-accent-300) 40%,transparent)}
+  .bloch .ring.a{transform:rotateY(60deg)}
+  .bloch .ring.b{transform:rotateY(120deg)}
+  .bloch .vec{position:absolute;left:50%;top:50%;width:2px;height:50%;margin-left:-1px;
+    transform-origin:top center;transform:rotate(146deg);
+    background:linear-gradient(var(--color-accent-200),transparent)}
+  .bloch .tip{position:absolute;bottom:-7px;left:-6px;width:14px;height:14px;border-radius:50%;
+    background:var(--color-accent-200);box-shadow:0 0 22px var(--color-accent-300)}
+  .bloch .cap{position:absolute;left:50%;transform:translateX(-50%);white-space:nowrap;
+    font:12px ui-monospace,Menlo,monospace;color:var(--color-accent-200)}
+  .bloch .cap.up{top:-28px} .bloch .cap.dn{bottom:-28px}
+  body[data-state="measuring"] .bloch .orb{animation-duration:1.6s}
+  body[data-state="measuring"] .bloch .halo{animation-duration:1.4s;
+    background:radial-gradient(circle,color-mix(in srgb,var(--color-accent) 42%,transparent),transparent 62%)}
+  @keyframes qspin{from{transform:rotateY(0)}to{transform:rotateY(360deg)}}
+  @keyframes qglow{0%,100%{opacity:.45}50%{opacity:1}}
+  @keyframes qbar{from{width:14%}to{width:78%}}
+  @media (prefers-reduced-motion:reduce){.bloch .orb,.bloch .halo,.progress i{animation:none}}
+
+  .circuit{max-width:100%;white-space:nowrap;overflow-x:auto;padding:13px 15px;border-radius:8px;
+    font:11px/1.9 ui-monospace,Menlo,monospace;color:var(--color-accent-100);
+    background:color-mix(in srgb,#0b0d16 46%,transparent);
+    border:1px solid color-mix(in srgb,var(--color-accent-300) 26%,transparent)}
+  .circuit b{display:block;margin-bottom:7px;font:600 9.5px ui-monospace,Menlo,monospace;
+    letter-spacing:.15em;text-transform:uppercase;color:color-mix(in srgb,var(--color-accent-100) 60%,transparent)}
+  .circuit i{font-style:normal;color:color-mix(in srgb,var(--color-accent-100) 45%,transparent)}
+  .topslot{padding:12px 32px 0}
+  .topslot .slot{height:90px}
+  .stagenote{text-align:center;font-size:13px;color:var(--color-accent-100);max-width:34ch}
+
+  h1{font-size:clamp(30px,4.2vw,44px);line-height:1.03;letter-spacing:-.03em;margin:0 0 12px}
+  .lede{font-size:15px;max-width:46ch;color:var(--color-neutral-400)}
+  .freebie{margin:14px 0 0;padding:10px 13px;border-radius:8px;font-size:12.5px;line-height:1.5;
+    color:var(--color-neutral-400);background:var(--color-surface);
+    border-left:2px solid color-mix(in srgb,var(--color-accent) 50%,transparent)}
+  .specs{display:flex;flex-wrap:wrap;gap:18px;margin-top:12px;font:11px ui-monospace,Menlo,monospace;color:var(--color-neutral-600)}
+  .mono{font-family:ui-monospace,Menlo,monospace}
+
+  .progress{height:3px;border-radius:2px;background:var(--color-neutral-900);overflow:hidden;margin-bottom:20px}
+  .progress i{display:block;height:100%;background:var(--color-accent);box-shadow:0 0 12px var(--color-accent);animation:qbar 2s ease-out infinite alternate}
+  .log{padding:15px 17px;border-radius:9px;background:var(--color-surface);box-shadow:var(--shadow-sm);font:12.5px/2 ui-monospace,Menlo,monospace;color:var(--color-neutral-500)}
+  .log .live{color:var(--color-accent)}
+
+  /* --- resultado --- */
+  .resultpage{max-width:1120px;margin:0 auto;width:100%}
+  .resultgrid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:34px;padding:30px 32px 34px;
+    background:radial-gradient(60% 46% at 38% 22%,color-mix(in srgb,var(--color-accent) 13%,transparent),transparent 72%)}
+  .verdict{font-family:var(--font-heading);font-weight:600;font-size:clamp(84px,15vw,132px);line-height:.9;
+    letter-spacing:-.05em;color:var(--color-accent);text-shadow:0 0 70px color-mix(in srgb,var(--color-accent) 55%,transparent)}
+  .histo{padding:18px 20px;border-radius:10px;background:var(--color-surface);box-shadow:var(--shadow-sm)}
+  .bar{display:flex;align-items:center;gap:12px}
+  .bar+.bar{margin-top:9px}
+  .bar .k{width:52px;font:12px ui-monospace,Menlo,monospace;color:var(--color-neutral-400)}
+  .bar .track{flex:1;height:22px;border-radius:4px;background:var(--color-neutral-900);overflow:hidden}
+  .bar .track i{display:block;height:100%;background:var(--color-neutral-700)}
+  .bar.win .track i{background:var(--color-accent);box-shadow:0 0 16px color-mix(in srgb,var(--color-accent) 60%,transparent)}
+  .bar .n{width:64px;text-align:right;font:600 13px ui-monospace,Menlo,monospace;color:var(--color-neutral-400)}
+  .bar.win .n{color:var(--color-accent)}
+  .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+  .table-wrap{overflow-x:auto}
+
+  /* --- anuncios --- */
+  .slot{display:grid;place-items:center;border:1px dashed var(--color-neutral-700);border-radius:8px;
+    background:rgba(41,43,49,.5);color:var(--color-neutral-600);text-align:center;
+    font:10px ui-monospace,Menlo,monospace;letter-spacing:.16em;text-transform:uppercase}
+  .slot-rect{height:250px} .slot-lead{height:90px}
+  .rail{display:flex;flex-direction:column;gap:16px}
+  .slot-sticky{display:flex;align-items:center;gap:14px;padding:10px 16px;background:#1c1e2b;
+    border-top:1px solid var(--color-divider);position:fixed;left:0;right:0;bottom:0;z-index:5}
+  .slot-sticky .slot{flex:1;height:62px}
+  .aside{padding:14px 16px;border-radius:8px;background:var(--color-surface);box-shadow:var(--shadow-sm)}
+  .shared{display:flex;flex-direction:column;gap:9px;font-size:12.5px}
+  .shared div{display:flex;gap:8px}
+  .shared b{font-weight:600;color:var(--color-neutral-500)}
+  .shared b.si{color:var(--color-accent)}
+
+  .quota{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;
+    border-radius:8px;background:var(--color-bg);font:12.5px ui-monospace,Menlo,monospace}
+  .dialog-backdrop{position:fixed;inset:0;z-index:20}
+  .dialog-backdrop[hidden]{display:none}
+
+  /* En pantallas bajas el 300x250 del panel empuja el CTA fuera de vista. */
+  @media (max-height:760px){.panel .slot-rect{display:none}}
+  @media (max-width:900px){
+    body[data-state="home"] .shell,
+    body[data-state="measuring"] .shell{grid-template-columns:1fr;min-height:0}
+    .bloch{width:min(230px,54vw)}
+    .stage{gap:38px;padding:34px 20px 40px}
+    .topslot{padding:10px 20px 0}
+    .panel{padding:18px 20px 24px}
+    html[data-ads="on"] .panel{padding-bottom:107px}
+    .resultgrid{grid-template-columns:1fr;padding:22px 20px 28px;gap:22px}
+    html[data-ads="on"] .resultgrid{padding-bottom:111px}
+  }
+</style>
+</head>
+<body data-state="home">
+
+<div class="topslot" data-slot><div class="slot" data-i18n="slotLead970">Anuncio · leaderboard 970×90</div></div>
+
+<!--  HOME + MIDIENDO  -->
+<div class="shell" data-screen="home measuring">
+  <div class="stage">
+    <div class="bloch">
+      <div class="halo"></div>
+      <div class="rig"><div class="orb">
+        <div class="ring eq"></div><div class="ring mer"></div><div class="ring a"></div><div class="ring b"></div>
+        <div class="vec"><div class="tip"></div></div>
+      </div></div>
+      <div class="cap up" data-i18n="capYes">|0⟩ águila · sí</div>
+      <div class="cap dn" data-i18n="capNo">|1⟩ sol · no</div>
+    </div>
+    <div class="circuit" data-screen="home">
+      <b data-i18n="circuitLabel">el circuito completo</b>
+      qreg q[1];<br>
+      h q[0]; <i data-i18n="circuitC1">// superposición</i><br>
+      measure q[0] -&gt; c[0];<br>
+      <i data-i18n="circuitC2">// y aquí decide el universo</i>
+    </div>
+    <div class="stagenote" data-screen="measuring" data-i18n="spinning">Girando. Todavía no es ni sí ni no.</div>
+  </div>
+
+  <div class="panel">
+    <div class="brandbar">
+      <div class="brand"><span class="dot"></span><span class="wordmark">V O L A D O</span></div>
+      <a class="navlink" href="como.html" data-screen="home" data-i18n="howLink">¿Cómo funciona?</a>
+      <span class="tag tag-accent" data-screen="measuring" data-i18n="measuring">midiendo</span>
+      <div class="seg" data-screen="home">
+        <label class="seg-opt"><input type="radio" name="lang" value="es" checked>ES</label>
+        <label class="seg-opt"><input type="radio" name="lang" value="en">EN</label>
+      </div>
+    </div>
+
+    <!-- home -->
+    <div data-screen="home" style="padding:34px 0 18px">
+      <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px">
+        <span class="tag tag-outline" style="white-space:nowrap" data-i18n="tagShots">1 qubit · 1,000 tiros</span>
+        <span class="tag tag-neutral" data-i18n="tagReal">hardware real de IBM</span>
+      </div>
+      <h1 data-i18n="title">Échate un volado<br>que nadie puede cargar.</h1>
+      <p class="lede" data-i18n="lede">Pregunta lo que sea de sí o no. La moneda es un qubit en una computadora cuántica de IBM: no hay fórmula, no hay semilla, no hay truco. Ni el universo sabía el resultado antes de que lo midiéramos.</p>
+      <form id="askForm" style="margin-top:22px">
+        <label class="visually-hidden" for="q" data-i18n="qLabel">Tu pregunta</label>
+        <textarea class="input" id="q" style="min-height:88px;font-size:16px" maxlength="140"
+          data-i18n-ph="placeholder" placeholder="¿Le mando mensaje o ya la dejo morir?" required></textarea>
+        <button class="btn btn-primary btn-block" style="font-size:16px;padding:13px" type="submit" data-i18n="cta">Tirar el volado cuántico</button>
+      </form>
+      <p class="freebie" data-i18n="freebie">Gratis y sin cola: si tu pregunta es “¿vuelvo con mi ex?”, es no. Quiérete. Esa no necesita un qubit.</p>
+      <div class="specs">
+        <span data-i18n="leastBusy">la máquina menos ocupada</span><span>1000 shots</span><span>~2 s</span>
+        <span data-i18n="noStore">no guardamos tu pregunta</span>
+      </div>
+    </div>
+
+    <!-- midiendo -->
+    <div data-screen="measuring" style="padding:30px 0 0">
+      <p style="font-size:13px;color:var(--color-neutral-400);margin:0 0 5px" data-i18n="yourQ">Tu pregunta</p>
+      <p id="echoQ" style="font-size:19px;max-width:32ch;margin:0 0 24px"></p>
+      <div class="progress"><i></i></div>
+      <div class="log" id="log"></div>
+    </div>
+
+    <div class="slot slot-rect" style="margin-top:auto" data-slot data-i18n="slot300">Anuncio 300×250</div>
+  </div>
+</div>
+
+<!--  RESULTADO  -->
+<div data-screen="result">
+  <div class="brandbar" style="padding:12px 32px;border-bottom:1px solid var(--color-divider)">
+    <div class="brand"><span class="dot"></span><span class="wordmark">V O L A D O</span></div>
+    <a class="navlink" href="como.html" data-i18n="howLink">¿Cómo funciona?</a>
+  </div>
+  <div class="resultpage"><div class="resultgrid">
+    <div>
+      <div style="text-align:center;padding:6px 0 22px">
+        <p id="resQ" style="font-size:14px;color:var(--color-neutral-400);margin:0 0 10px"></p>
+        <div class="verdict" id="verdict">SÍ</div>
+        <p id="margin" style="font-size:13px;color:var(--color-neutral-400);margin:14px 0 0"></p>
+      </div>
+
+      <div class="histo">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px">
+          <h6 style="margin:0;color:var(--color-neutral-400)" data-i18n="distro">Distribución de las 1,000 mediciones</h6>
+          <span class="mono" style="font-size:11px;color:var(--color-neutral-400)">shots = 1000</span>
+        </div>
+        <div class="bar" id="barYes"><span class="k">|0⟩ <span data-i18n="yes">sí</span></span><span class="track"><i></i></span><span class="n">-</span></div>
+        <div class="bar" id="barNo"><span class="k">|1⟩ <span data-i18n="no">no</span></span><span class="track"><i></i></span><span class="n">-</span></div>
+      </div>
+
+      <div class="table-wrap"><table class="table" style="margin-top:22px">
+        <thead><tr>
+          <th>Backend</th><th data-i18n="processor">Procesador</th>
+          <th data-i18n="runtime">Tiempo de ejecución</th><th data-i18n="queue">Cola</th><th>Job</th>
+        </tr></thead>
+        <tbody><tr>
+          <td class="mono" style="color:var(--color-accent)" id="mBackend">-</td>
+          <td class="mono" id="mChip">-</td>
+          <td class="mono" id="mMs">-</td>
+          <td class="mono" id="mQueue">-</td>
+          <td><a class="mono" style="font-size:12px" id="mJob" href="#" target="_blank" rel="noopener">-</a></td>
+        </tr></tbody>
+      </table></div>
+
+      <div class="actions">
+        <button class="btn btn-primary" style="font-size:15px;padding:11px 22px" id="again" data-i18n="again">Otro volado</button>
+        <button class="btn btn-secondary" id="share" data-i18n="share">Ponlo en el muro</button>
+      </div>
+      <div class="slot slot-lead" style="margin-top:22px" data-slot data-i18n="slotResult">Anuncio bajo resultado · 728×90</div>
+    </div>
+
+    <div class="rail">
+      <div class="slot slot-rect" data-slot data-i18n="slot300">Anuncio 300×250</div>
+      <div class="aside">
+        <h6 style="margin:0 0 4px;color:var(--color-neutral-400)" data-i18n="sharedTitle">Volados compartidos</h6>
+        <p style="font-size:11px;color:var(--color-neutral-400);margin:0 0 11px" data-i18n="sharedNote">Solo salen aquí los que alguien decidió compartir.</p>
+        <div class="shared" id="sharedList"></div>
+      </div>
+      <div class="slot slot-rect" data-slot data-i18n="slot300">Anuncio 300×250</div>
+    </div>
+  </div></div>
+</div>
+
+<!--  LÍMITE DIARIO  -->
+<div class="dialog-backdrop" id="limitModal" hidden>
+  <div class="dialog" style="width:min(520px,100%);padding:var(--space-6)">
+    <div class="dialog-title" style="font-size:23px" data-i18n="limitTitle">Ya te echaste 5 volados hoy</div>
+    <p class="dialog-body" style="margin:0" data-i18n="limitBody">Cinco decisiones en un día ya es bastante destino por hoy. Mañana el universo abre otra vez.</p>
+    <div class="slot slot-rect" data-slot data-i18n="slotReward">Anuncio recompensado · 300×250</div>
+    <div class="quota"><span style="color:var(--color-neutral-400)" data-i18n="resetsIn">se reinicia en</span><span style="color:var(--color-accent)" id="resetIn">-</span></div>
+    <div class="dialog-actions" style="justify-content:space-between">
+      <button class="btn btn-ghost" id="limitClose" data-i18n="comeBack">Mañana vuelvo</button>
+      <button class="btn btn-primary" id="rewardAd" data-i18n="watchAd">Ver anuncio y ganar 1 volado</button>
+    </div>
+  </div>
+</div>
+
+<div class="slot-sticky" data-slot>
+  <div class="slot" data-i18n="slotSticky">Anuncio pegado · 970×60</div>
+  <a href="como.html#ads" style="flex:none;font-size:11px;color:var(--color-neutral-500);text-decoration:none;white-space:nowrap">¿por qué tanto anuncio?</a>
+  <button class="btn btn-secondary btn-icon" aria-label="Cerrar anuncio" onclick="this.parentElement.remove()">✕</button>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

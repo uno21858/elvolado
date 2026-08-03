@@ -1,0 +1,29 @@
+# docker compose up -d
+# .env necesita además: TUNNEL_TOKEN=<token del tunnel en Zero Trust dashboard>
+# En el dashboard apunta el tunnel a http://volado:8000
+services:
+  volado:
+    build: .
+    # solo las vars de IBM; TUNNEL_TOKEN NO entra al contenedor público
+    environment:
+      - IBM_API=${IBM_API}
+      - IBM_CRN=${IBM_CRN:-}
+      - POOL_FILE=/data/pool.json
+    volumes:
+      - data:/data   # pool.json y shared.json sobreviven restarts
+    restart: unless-stopped   # vuelve solo tras crash o corte de luz
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    command: tunnel run
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+    depends_on:
+      - volado
+    restart: unless-stopped
+
+volumes:
+  data:

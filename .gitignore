@@ -1,0 +1,12 @@
+/.idea/
+/.env
+/pool.json
+/pool.json.tmp
+/shared.json
+/shared.json.tmp
+/pool/
+/ads-on.sh
+__pycache__/
+/docs/
+/ce.log
+/dom.html

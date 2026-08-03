@@ -1,0 +1,15 @@
+.env
+.git
+.idea
+.claude
+__pycache__
+*.pyc
+pool.json
+pool.json.tmp
+shared.json
+shared.json.tmp
+pool/
+docs
+ads-on.sh
+ce.log
+dom.html
