@@ -107,8 +107,13 @@ def _submit(vid):
         from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
         from qiskit_ibm_runtime import SamplerV2
 
-        service = get_service()
-        backend = service.least_busy(operational=True, simulator=False)
+        global _service
+        try:
+            backend = get_service().least_busy(operational=True, simulator=False)
+        except Exception:
+            with _svc_lock:
+                _service = None
+            backend = get_service().least_busy(operational=True, simulator=False)
         pending = backend.status().pending_jobs
 
         qc = QuantumCircuit(1, 1)
