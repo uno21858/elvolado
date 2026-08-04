@@ -6,14 +6,16 @@
 # .env: IBM_API (API key de IBM Cloud), IBM_CRN (opcional).
 
 import json, os, threading, time, uuid
+from datetime import datetime
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 POOL_FILE = os.environ.get('POOL_FILE', os.path.join(ROOT, 'pool.json'))
 SHARED_FILE = os.path.join(os.path.dirname(POOL_FILE), 'shared.json')
-SHOTS = 1000            # por volado, debe coincidir con config.js
+SHOTS = 1000            # debe coincidir con config.js
 MAX_JOBS_DAY = 8        # tope de jobs/día: ~3 s de QPU por job, protege los 600 s/mes
-QUOTA_TTL = 300         # cache de /api/quota, evita pegarle a IBM en cada request
+QUOTA_TTL = 300
+BACKEND_TTL = 300       # least_busy tarda ~50 s: se cachea
 PORT = int(os.environ.get('PORT', 8000))
 
 # No servir estos por HTTP aunque estén junto a server.py (fuga de secretos / predecir bits).
@@ -31,7 +33,6 @@ _service = None
 
 
 def load(path, default):
-    # self-healing: un archivo corrupto se trata como vacío, no tira el endpoint
     try:
         return json.load(open(path))
     except Exception:
@@ -49,8 +50,6 @@ def save(path, obj):
 
 
 def get_service():
-    # cacheado y serializado: sin esto, quota y refill construyen el servicio a la
-    # vez (dos auths concurrentes) y uno truena. Se reusa: un solo auth por proceso.
     global _service
     with _svc_lock:
         if _service is None:
@@ -61,6 +60,23 @@ def get_service():
                 instance=os.environ.get('IBM_CRN') or None,
             )
     return _service
+
+
+_backend = {'t': 0, 'v': None}
+
+
+def pick_backend():
+    global _service
+    if _backend['v'] and time.time() - _backend['t'] < BACKEND_TTL:
+        return _backend['v']
+    try:
+        b = get_service().least_busy(operational=True, simulator=False)
+    except Exception:
+        with _svc_lock:
+            _service = None
+        b = get_service().least_busy(operational=True, simulator=False)
+    _backend.update(t=time.time(), v=b)
+    return b
 
 
 _quota = {'t': 0, 'v': None}
@@ -87,7 +103,6 @@ def jobs_today():
 
 
 def count_job():
-    # cuenta SOLO jobs mandados con éxito (QPU gastado de verdad)
     with lock:
         d = load(POOL_FILE, {})
         day = time.strftime('%Y-%m-%d')
@@ -99,22 +114,15 @@ def count_job():
 
 
 def _submit(vid):
-    # en hilo aparte: least_busy + transpile + submit tardan ~10-20 s y el
-    # request de inicio debe regresar de inmediato
     v = JOBS[vid]
     try:
         from qiskit import QuantumCircuit
         from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
         from qiskit_ibm_runtime import SamplerV2
 
-        global _service
-        try:
-            backend = get_service().least_busy(operational=True, simulator=False)
-        except Exception:
-            with _svc_lock:
-                _service = None
-            backend = get_service().least_busy(operational=True, simulator=False)
+        backend = pick_backend()
         pending = backend.status().pending_jobs
+        v['status'] = 'submitting'
 
         qc = QuantumCircuit(1, 1)
         qc.h(0)
@@ -139,9 +147,9 @@ def start_volado():
         return None
     now = time.time()
     for k in [k for k, v in JOBS.items() if now - v['t'] > 7200]:
-        del JOBS[k]   # poda: nadie hace poll de un volado de hace 2 horas
+        del JOBS[k]
     vid = uuid.uuid4().hex[:12]
-    JOBS[vid] = {'status': 'submitting', 't': now}
+    JOBS[vid] = {'status': 'picking', 't': now}
     threading.Thread(target=_submit, args=(vid,), daemon=True).start()
     return vid
 
@@ -152,8 +160,8 @@ def check_volado(vid):
         return {'error': 'gone'}, 404
     if v['status'] == 'error':
         return {'error': 'ibm'}, 502
-    if v['status'] == 'submitting':
-        return {'pending': vid, 'status': 'submitting'}, 202
+    if v['status'] in ('picking', 'submitting'):
+        return {'pending': vid, 'status': v['status']}, 202
     if 'result' in v:
         return v['result'], 200
     st = str(v['job'].status()).upper()
@@ -165,6 +173,21 @@ def check_volado(vid):
     return {'pending': vid, 'status': st.lower(), 'queue': v['queue']}, 202
 
 
+def _exec_ms(job):
+    try:
+        m = job.metrics()
+        ts = m.get('timestamps') or {}
+        if ts.get('running') and ts.get('finished'):
+            d = (datetime.fromisoformat(ts['finished'])
+                 - datetime.fromisoformat(ts['running'])).total_seconds()
+            if d > 0:
+                return int(d * 1000)
+        return int(m['usage']['quantum_seconds'] * 1000)
+    except Exception as e:
+        print('!! exec_ms:', e, flush=True)
+        return 0
+
+
 def _finish(v):
     job = v['job']
     bits = ''.join(job.result()[0].data.c.get_bitstrings())
@@ -173,10 +196,7 @@ def _finish(v):
         bit = int(bits[-1])   # empate exacto (~2.5%): el último tiro decide
     else:
         bit = 0 if zero > len(bits) - zero else 1
-    try:
-        exec_ms = int(job.usage() * 1000)
-    except Exception:
-        exec_ms = 0
+    exec_ms = _exec_ms(job)
     return {
         'bit': bit,
         'counts': {'zero': zero, 'one': len(bits) - zero},

@@ -59,7 +59,8 @@ const I18N = {
     leastBusy: 'la máquina menos ocupada',
     spinning: 'Girando. Todavía no es ni sí ni no.',
     howLink: '¿Cómo funciona?', measuring: 'midiendo',
-    waitLive: r => r.status === 'submitting' ? 'mandando tu job a la máquina real…'
+    waitLive: r => r.status === 'picking' ? 'buscando la máquina menos ocupada de IBM…'
+      : r.status === 'submitting' ? 'mandando tu job a la máquina real…'
       : r.status === 'queued' ? `en la fila de IBM (${r.queue ?? '?'} trabajos al entrar)…`
       : 'corriendo en la máquina real…',
     tagShots: '1 qubit · 1,000 tiros', tagReal: 'hardware real de IBM',
@@ -102,7 +103,8 @@ const I18N = {
     leastBusy: 'whichever machine is least busy',
     spinning: 'Still spinning. Not yes, not no.',
     howLink: 'How it works', measuring: 'measuring',
-    waitLive: r => r.status === 'submitting' ? 'sending your job to the real machine…'
+    waitLive: r => r.status === 'picking' ? 'finding IBM’s least busy machine…'
+      : r.status === 'submitting' ? 'sending your job to the real machine…'
       : r.status === 'queued' ? `in IBM’s queue (${r.queue ?? '?'} jobs ahead at entry)…`
       : 'running on the real machine…',
     tagShots: '1 qubit · 1,000 shots', tagReal: 'real IBM hardware',
@@ -194,7 +196,7 @@ $('#askForm').addEventListener('submit', async e => {
     data = await fetchVolado(r => {
       const d = document.createElement('div');
       d.className = 'live';
-      d.textContent = t.waitLive(r);
+      d.textContent = `${t.waitLive(r)} ${Math.round((performance.now() - started) / 1000)}s`;
       $('#log').replaceChildren(d);
     });
   } catch (err) {
