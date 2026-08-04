@@ -28,6 +28,7 @@
   .mono{font-family:ui-monospace,Menlo,monospace}
 
 html[data-ads="off"] [data-slot]{display:none !important}
+html[data-ads="off"] [data-ad-copy]{display:none !important}
   .brandbar{display:flex;align-items:center;gap:16px;padding:12px 32px;border-bottom:1px solid var(--color-divider)}
   .brand{display:flex;align-items:center;gap:9px;margin-right:auto;text-decoration:none;color:var(--color-text)}
   .dot{width:9px;height:9px;border-radius:50%;background:var(--color-accent);box-shadow:0 0 14px var(--color-accent)}
@@ -213,10 +214,10 @@ footer{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;
     <div class="head" data-i18n="mythColB">Lo que de verdad pasa</div>
 
     <div><p data-i18n="m1a">“Es instantánea, prueba todas las respuestas a la vez.”</p></div>
-    <div class="r"><p data-i18n="m1b">El <strong>lote</strong> del que salió tu bit hizo cola en una máquina real. Hay una fila de trabajos de físicos, universidades y empresas, y el nuestro se formó atrás. Correrlo son unos segundos; la espera en la fila puede ser de minutos o de horas. No hay nada instantáneo en esto.</p></div>
+    <div class="r"><p data-i18n="m1b">Tu volado hace cola en una <strong>máquina real</strong>. Hay una fila de trabajos de físicos, universidades y empresas, y el tuyo se forma atrás. Correrlo son unos segundos; la espera en la fila puede ser de minutos o de horas. La pantalla no está fingiendo: está esperando de verdad.</p></div>
 
     <div><p data-i18n="m2a">“Es millones de veces más rápida que una computadora normal.”</p></div>
-    <div class="r"><p data-i18n="m2b">Para <strong>casi todo</strong>, es ridículamente más lenta. Es más rápida solo en un puñado de problemas muy específicos, y ni en esos ha ganado todavía de forma útil. Tu celular hace este mismo volado en 0.00001 ms. La máquina de IBM se tarda unos 30 segundos en correr el lote de tiros, más la fila.</p></div>
+    <div class="r"><p data-i18n="m2b">Para <strong>casi todo</strong>, es ridículamente más lenta. Es más rápida solo en un puñado de problemas muy específicos, y ni en esos ha ganado todavía de forma útil. Tu celular hace este mismo volado en 0.00001 ms. La máquina de IBM se tarda unos segundos en correr tus 1,000 tiros, más la fila.</p></div>
 
     <div><p data-i18n="m3a">“Los qubits son perfectos, es tecnología del futuro.”</p></div>
     <div class="r"><p data-i18n="m3b">Se equivocan <strong>todo el tiempo</strong>. Un qubit pierde su estado en microsegundos porque cualquier vibración, calor o campo magnético lo tumba. Por eso el chip vive a 15 milikelvin, más frío que el espacio exterior. Alrededor del 1% de las mediciones salen mal nomás porque sí.</p></div>
@@ -236,10 +237,10 @@ footer{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;
 
   <hr class="hr" style="margin:34px 0 28px">
 
-  <h2 id="ads" data-i18n="adsH">¿Y por qué tanto anuncio?</h2>
-  <p class="lede" data-i18n="adsLede">La respuesta es incómoda pero simple: el chiste es carísimo.</p>
+  <h2 id="ads" data-ad-copy data-i18n="adsH">¿Y por qué tanto anuncio?</h2>
+  <p class="lede" data-ad-copy data-i18n="adsLede">La respuesta es incómoda pero simple: el chiste es carísimo.</p>
 
-  <div class="fund">
+  <div class="fund" data-ad-copy>
     <div>
       <div class="fk" data-i18n="f1k">Lo que IBM regala</div>
       <div class="fv">10 min</div>
@@ -257,12 +258,12 @@ footer{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;
     </div>
   </div>
 
-  <p class="body" style="margin-top:20px" data-i18n="adsP1">Tu volado gasta como <strong>2 segundos</strong> de procesador. Fuera de la cuota gratis, eso son <strong>$3.20 dólares</strong>. Un anuncio deja centésimas de centavo. Harían falta <strong>unas 2,000 visitas</strong> para pagar un solo volado.</p>
-  <p class="body" data-i18n="adsP2">Los anuncios no van a pagar tiempo cuántico. Ayudan con el dominio y el servidor. Están ahí porque el sitio es gratis y no te pido nada más: ni cuenta, ni correo, ni tu pregunta.</p>
+  <p class="body" style="margin-top:20px" data-ad-copy data-i18n="adsP1">Tu volado gasta como <strong>3 segundos</strong> de máquina. Fuera de la cuota gratis, eso son <strong>$4.80 dólares</strong>. Un anuncio deja centésimas de centavo. Harían falta <strong>unas 3,200 visitas</strong> para pagar un solo volado.</p>
+  <p class="body" data-ad-copy data-i18n="adsP2">Los anuncios no van a pagar tiempo cuántico. Ayudan con el dominio y el servidor. Están ahí porque el sitio es gratis y no te pido nada más: ni cuenta, ni correo, ni tu pregunta.</p>
 
   <h3 style="margin-top:26px" data-i18n="shareH">Y los 10 minutos no son tuyos, son de todos</h3>
   <p class="body" data-i18n="shareP1">Esta es la parte importante. Los 10 minutos son de <strong>una sola cuenta</strong>, la mía, y se reparten entre <strong>todas</strong> las personas que entran a la página. No son 10 minutos por visitante. Cada volado que echas le quita tiempo al que sigue.</p>
-  <p class="body" data-i18n="shareP2">Los bits vienen en lotes: un job grande gasta ~30 segundos de máquina y alcanza para ~100 volados, así que cada volado sale como a <strong>0.3 segundos</strong>. Con eso el mes entero da para unos <strong>2,000</strong>. Si un día esto se llena de gente, se pueden acabar antes de fin de mes, y la página te lo va a decir: se acabó, vuelve el mes que entra.</p>
+  <p class="body" data-i18n="shareP2">Cada volado manda su propio job y quema unos <strong>~3 segundos</strong> de máquina, así que el mes entero da para unos <strong>200</strong>. Hay un tope de <strong>8 al día</strong> pa que un bot no se queme el mes en una tarde. Si se acaban, la página te lo dice: se acabó, vuelve mañana (o el mes que entra).</p>
   <p class="body" style="font-size:12px" data-i18n="shareP3">Nota: IBM tiene una promoción de 180 minutos al año para cuentas que ya usaron 20. Si esto llega hasta allá, el límite sube y lo aviso aquí.</p>
 
   <h3 style="margin-top:26px" data-i18n="repoH">Todo el código está a la vista</h3>
@@ -286,8 +287,8 @@ footer{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;
 
   <h2 data-i18n="fleetH">¿Y en qué máquina te tocó?</h2>
   <p class="lede" data-i18n="fleetLede">No hay una sola computadora cuántica. IBM tiene una flota, y tu volado cae en la que esté libre.</p>
-  <p class="body" style="margin-top:18px" data-i18n="fleetP1">Los bits no se piden de uno en uno; sería quemar los 10 minutos en nada. El programa pide un <strong>lote grande</strong> de una sola vez a la máquina que esté <strong>operativa</strong> (no en mantenimiento) y con <strong>menos cola</strong> —eso es <span class="mono">service.least_busy()</span>—, guarda las respuestas, y tu volado sale de ahí al instante. Por eso el nombre cambia cada tanto: cambia cuando se pide un lote nuevo, no en cada pregunta.</p>
-  <p class="body" data-i18n="fleetP2">Por eso la tabla del resultado te dice en qué máquina se corrió el lote y cuánto tardó: no es adorno, es la prueba de que los bits salieron de hardware real y no de un <span class="mono">Math.random()</span>. Si el lote cayó en una con 60 trabajos formados adelante, tardó: hay físicos de verdad usando esa misma máquina, y su experimento probablemente importa más que tu duda.</p>
+  <p class="body" style="margin-top:18px" data-i18n="fleetP1">Cada pregunta manda un <strong>job nuevo</strong>, en ese momento, a la máquina que esté <strong>operativa</strong> (no en mantenimiento) y con <strong>menos cola</strong> —eso es <span class="mono">service.least_busy()</span>—. Tu volado hace su propia fila y corre en vivo: por eso puede tardar de segundos a horas. Y por eso el nombre puede cambiar entre pregunta y pregunta: siempre se lleva la que esté más libre.</p>
+  <p class="body" data-i18n="fleetP2">Por eso la tabla del resultado te dice en qué máquina corrió tu job y cuánto tardó: no es adorno, es la prueba de que tu bit salió de hardware real y no de un <span class="mono">Math.random()</span>. Si tu job cayó en una con 60 trabajos formados adelante, tardó: hay físicos de verdad usando esa misma máquina, y su experimento probablemente importa más que tu duda.</p>
   <p class="body" data-i18n="fleetP2b">¿Y por qué usamos <strong>un solo qubit</strong> si cada máquina trae 156? Porque un volado es un bit: sí o no. Medir los 156 no daría un volado “mejor”, daría 156 volados de golpe que no pedimos. Y cada qubit extra es una pieza más que puede fallar: son delicados y se equivocan solos como el 1% de las veces. El circuito más honesto es el más chico —un qubit, una compuerta, una medición— y los otros 155 se quedan quietos sin meter ruido.</p>
 
   <div class="fleet">
@@ -296,7 +297,7 @@ footer{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;
     <div><span class="fname">ibm_kingston</span><span class="fmeta" data-i18n="fl3m">Heron r2 · 156 qubits</span><span class="fnote" data-i18n="fl3n">La tercera Heron. Igual de buena para un bit.</span></div>
     <div class="dead"><span class="fname">ibm_brisbane</span><span class="fmeta" data-i18n="fl4m">retirada · nov 2025</span><span class="fnote" data-i18n="fl4n">Estuvo años en todos los tutoriales. Ya no existe, y eso también dice mucho de qué tan joven es esto.</span></div>
   </div>
-  <p class="body" style="font-size:12px;margin-top:12px" data-i18n="fleetP3">La flota cambia: IBM prende y apaga máquinas cada pocos meses. Por eso el sitio nunca trae un nombre escrito a mano, pregunta cuáles hay antes de pedir cada lote.</p>
+  <p class="body" style="font-size:12px;margin-top:12px" data-i18n="fleetP3">La flota cambia: IBM prende y apaga máquinas cada pocos meses. Por eso el sitio nunca trae un nombre escrito a mano, pregunta cuáles hay antes de mandar cada job.</p>
 
   <hr class="hr" style="margin:34px 0 22px">
 
@@ -306,7 +307,7 @@ footer{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;
       <tr><td style="color:var(--color-neutral-400)" data-i18n="tr1">De dónde sale</td><td data-i18n="tr1a">Una fórmula con semilla</td><td style="color:var(--color-accent)" data-i18n="tr1b">Una medición física</td></tr>
       <tr><td style="color:var(--color-neutral-400)" data-i18n="tr2">¿Se puede predecir?</td><td data-i18n="tr2a">Sí, si conoces la semilla</td><td style="color:var(--color-accent)" data-i18n="tr2b">No. Nunca. Por principio</td></tr>
       <tr><td style="color:var(--color-neutral-400)" data-i18n="tr3">¿Se repite?</td><td data-i18n="tr3a">Sí, la secuencia es fija</td><td style="color:var(--color-accent)" data-i18n="tr3b">No existe una secuencia</td></tr>
-      <tr><td style="color:var(--color-neutral-400)" data-i18n="tr4">Cuánto tarda</td><td>0.00001 ms</td><td data-i18n="tr4b">~30 s el lote, más cola</td></tr>
+      <tr><td style="color:var(--color-neutral-400)" data-i18n="tr4">Cuánto tarda</td><td>0.00001 ms</td><td data-i18n="tr4b">unos segundos el job, más la cola</td></tr>
     </tbody>
   </table></div>
   <p class="body" style="font-size:12px;margin-top:14px" data-i18n="tableNote">Sí, es infinitamente más lento y más caro para decidir si pides tacos. Ese es el punto.</p>
@@ -360,8 +361,8 @@ footer{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;
     <div id="fundLeft" class="card-title" style="font-family:ui-monospace,Menlo,monospace;color:var(--color-accent)">—</div>
     <p class="card-body" style="margin-bottom:0" data-i18n="cardFundB">restantes de los 10 minutos que IBM regala este mes.</p>
     <div class="meter"><i id="fundBar" style="width:0"></i></div>
-    <p class="card-body" data-i18n="cardFundB2">Los anuncios llevan comprados <strong style="color:var(--color-text);font-weight:500">0 s</strong> extra.</p>
-    <div class="card-meta"><a href="#ads" data-i18n="cardFundL">¿Por qué tanto anuncio? ↓</a></div>
+    <p class="card-body" data-ad-copy data-i18n="cardFundB2">Los anuncios llevan comprados <strong style="color:var(--color-text);font-weight:500">0 s</strong> extra.</p>
+    <div class="card-meta" data-ad-copy><a href="#ads" data-i18n="cardFundL">¿Por qué tanto anuncio? ↓</a></div>
   </div>
   <div class="slot slot-tall" data-slot data-i18n="slot600">Anuncio 300×600</div>
 </aside>

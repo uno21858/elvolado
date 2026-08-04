@@ -2,11 +2,23 @@
 
 const { API, DAILY_LIMIT, SHOTS } = window.VOLADO;
 
-async function fetchVolado() {
+/* Modo directo: el primer GET manda el job a IBM y regresa {pending}; de ahí
+   poll cada 4 s hasta que la cola real lo suelte. La espera es la de verdad. */
+async function fetchVolado(onWait) {
+  let res = await fetchJson(API);
+  while (res.pending) {
+    if (onWait) onWait(res);
+    await new Promise(r => setTimeout(r, 4000));
+    res = await fetchJson(API + '?job=' + res.pending);
+  }
+  return res;
+}
+
+async function fetchJson(url) {
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 15000);   // el server ya no bloquea minutos; corta por si acaso
+  const timer = setTimeout(() => ctrl.abort(), 15000);   // cada poll es corto; corta por si acaso
   try {
-    const res = await fetch(API, { headers: { 'accept': 'application/json' }, signal: ctrl.signal });
+    const res = await fetch(url, { headers: { 'accept': 'application/json' }, signal: ctrl.signal });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
       const err = new Error('backend ' + res.status); err.code = body.error;
@@ -47,6 +59,9 @@ const I18N = {
     leastBusy: 'la máquina menos ocupada',
     spinning: 'Girando. Todavía no es ni sí ni no.',
     howLink: '¿Cómo funciona?', measuring: 'midiendo',
+    waitLive: r => r.status === 'submitting' ? 'mandando tu job a la máquina real…'
+      : r.status === 'queued' ? `en la fila de IBM (${r.queue ?? '?'} trabajos al entrar)…`
+      : 'corriendo en la máquina real…',
     tagShots: '1 qubit · 1,000 tiros', tagReal: 'hardware real de IBM',
     title: 'Échate un volado<br>que nadie puede cargar.',
     lede: 'Pregunta lo que sea de sí o no. La moneda es un qubit en una computadora cuántica de IBM: no hay fórmula, no hay semilla, no hay truco. Ni el universo sabía el resultado antes de que lo midiéramos.',
@@ -62,11 +77,11 @@ const I18N = {
     resetsIn: 'se reinicia en', comeBack: 'Mañana vuelvo', watchAd: 'Ver anuncio y ganar 1 volado',
     VERDICT: ['SÍ', 'NO'],
     margin: (w, l) => `Ganó por ${w} a ${l}. No hay recuento.`,
-    tie: `Quedó ${SHOTS / 2} a ${SHOTS / 2}. Un bit cuántico extra desempató. Tampoco hay recuento.`,
+    tie: `Quedó ${SHOTS / 2} a ${SHOTS / 2}. El último tiro desempató. Tampoco hay recuento.`,
     logLines: j => [
       `→ leyendo bits del job ${j.id} · IBM Quantum`,
       `→ backend: ${j.backend} · ${j.chip}`,
-      `→ cola al pedir el lote: ${j.queue} trabajos`,
+      `→ cola al entrar tu job: ${j.queue} trabajos`,
       `→ h q[0]; measure q[0]; · ${SHOTS} shots`
     ],
     slotLead970: 'Anuncio · leaderboard 970×90',
@@ -79,7 +94,7 @@ const I18N = {
     fHome: 'Inicio', fHow: '¿Cómo funciona?', fLegal: 'Privacidad y términos',
     fCredit: 'Hecho por el mame. Diseñado con Claude.',
     error: 'Se cayó la conexión con IBM. Intenta otra vez.',
-    cooldown: 'Los qubits se están enfriando: le estoy pidiendo bits nuevos a IBM. Dale unos segundos y vuelve a intentar.'
+    cooldown: 'Ya se acabaron los volados de hoy: hay un tope diario de jobs pa que los 10 minutos del mes alcancen. Vuelve mañana.'
   },
   en: {
     capYes: '|0⟩ heads · yes', capNo: '|1⟩ tails · no',
@@ -87,6 +102,9 @@ const I18N = {
     leastBusy: 'whichever machine is least busy',
     spinning: 'Still spinning. Not yes, not no.',
     howLink: 'How it works', measuring: 'measuring',
+    waitLive: r => r.status === 'submitting' ? 'sending your job to the real machine…'
+      : r.status === 'queued' ? `in IBM’s queue (${r.queue ?? '?'} jobs ahead at entry)…`
+      : 'running on the real machine…',
     tagShots: '1 qubit · 1,000 shots', tagReal: 'real IBM hardware',
     title: 'Flip a coin<br>nobody can rig.',
     lede: 'Ask anything with a yes-or-no answer. The coin is a qubit on an IBM quantum computer: no formula, no seed, no trick. Not even the universe knew the answer before we measured it.',
@@ -102,11 +120,11 @@ const I18N = {
     resetsIn: 'resets in', comeBack: 'Back tomorrow', watchAd: 'Watch an ad, get 1 flip',
     VERDICT: ['YES', 'NO'],
     margin: (w, l) => `Won ${w} to ${l}. No recount.`,
-    tie: `It landed ${SHOTS / 2} to ${SHOTS / 2}. One extra quantum bit broke the tie. Still no recount.`,
+    tie: `It landed ${SHOTS / 2} to ${SHOTS / 2}. The last shot broke the tie. Still no recount.`,
     logLines: j => [
       `→ reading bits from job ${j.id} · IBM Quantum`,
       `→ backend: ${j.backend} · ${j.chip}`,
-      `→ queue when the batch was pulled: ${j.queue} jobs`,
+      `→ queue when your job entered: ${j.queue} jobs`,
       `→ h q[0]; measure q[0]; · ${SHOTS} shots`
     ],
     slotLead970: 'Ad · leaderboard 970×90',
@@ -119,7 +137,7 @@ const I18N = {
     fHome: 'Home', fHow: 'How it works', fLegal: 'Privacy and terms',
     fCredit: 'Built for the joke. Designed with Claude.',
     error: 'Lost the connection to IBM. Try again.',
-    cooldown: 'The qubits are cooling down — fetching fresh bits from IBM. Give it a few seconds and try again.'
+    cooldown: 'Today’s flips are gone: there is a daily job cap so the month’s 10 minutes last. Come back tomorrow.'
   }
 };
 
@@ -173,7 +191,12 @@ $('#askForm').addEventListener('submit', async e => {
   let data;
   const started = performance.now();
   try {
-    data = await fetchVolado();
+    data = await fetchVolado(r => {
+      const d = document.createElement('div');
+      d.className = 'live';
+      d.textContent = t.waitLive(r);
+      $('#log').replaceChildren(d);
+    });
   } catch (err) {
     $('#log').innerHTML = `<div class="live">${err.code === 'cooldown' ? t.cooldown : t.error}</div>`;
     setTimeout(() => setState('home'), 2600);
